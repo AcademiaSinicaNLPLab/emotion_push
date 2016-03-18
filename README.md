@@ -1,8 +1,11 @@
 # Process
 
-## Initialize corpus submodule
+## Setting up the environment
+```bash
 git submodule update
-
+cd word2vec
+# Followd word2vec/README.md to setup word2vec
+```
 ## Build Classifiers
 - Write new classifier that is scikit-learn compatible in src/classifier.
 - Train the classifier with src/train_models.py and store it in model/

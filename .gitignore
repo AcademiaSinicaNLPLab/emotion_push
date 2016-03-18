@@ -1,0 +1,6 @@
+*.pyc
+*.pkl
+model/*
+cache/*
+!model/*.md
+!cache/*.md
