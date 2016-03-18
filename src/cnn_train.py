@@ -54,39 +54,6 @@ def load_embedding(vocabulary, cache_file_name):
             cPickle.dump(res, f)
         return res
 
-def reorder_embedding():
-    w2v = Word2Vec()
-    lexicon_fname = os.path.join(LEXICON_DIR, 'connotation/connotation.csv'),
-    cache_file_name = os.path.join(CACHE_DIR, 'emborder.pkl')
-
-    if os.path.isfile(cache_file_name):
-        with open(cache_file_name) as f:
-            return cPickle.load(f)
-    else:
-        import pandas as pd
-        df = pd.read_csv(lexicon_fname, header=None)
-        df.columns = ['word', 'sent']
-
-        def get_emb(df, sent):
-            words = list(df['word'][df['sent'] == sent])
-            emb = []
-            for word in words:
-                if word in w2v:
-                    emb.append(w2v[word])
-            return np.array(emb)
-
-        pos_mat = get_emb(df, 'positive')
-        neg_mat = get_emb(df, 'negative')
-
-        avg_diff = np.average(pos_mat, axis=0) - np.average(neg_mat, axis=0)
-        var_sum = np.var(pos_mat, axis=0) + np.var(neg_mat, axis=0)
-        score = avg_diff / var_sum
-        res = np.argsort(score)
-
-        with open(cache_file_name, 'w') as f:
-            cPickle.dump(res, f)
-        return res
-
 def transform_embedding(emb):
     import theano.tensor as T
     from theano import function
@@ -105,23 +72,24 @@ def parse_arg(argv):
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('dataset', help='dataset name')
     parser.add_argument('-e', '--epoch', type=int, default=20, help='number of epoch')
+    parser.add_argument('-s', '--seed', type=int, default=0, help='random seed')
     return parser.parse_args(argv[1:])
 
 if __name__ == "__main__":
     args = parse_arg(sys.argv)
-    dataset = args.dataset
+    np.random.seed(args.seed)
 
+    dataset = args.dataset
     corpus = pandas.read_pickle(os.path.join(CORPUS_DIR, dataset+'.pkl'))
-    sentences, labels = list(corpus['sentence']), list(corpus['label'])
+    sentences, labels = list(corpus.sentence), list(corpus.label)
+
     if len(set(corpus.split.values))==1:
         split = None
     else:
         split = corpus.split.values
 
-    logging.debug('loading feature..')
     cnn_extractor = CNNExtractor(mincount=0)
     X, y = cnn_extractor.extract_train(sentences, labels)
-    logging.debug('feature loaded')
 
     pretrained = True
     if pretrained:
@@ -181,31 +149,3 @@ if __name__ == "__main__":
                 nb_epoch=args.epoch,
                 show_accuracy=True,
                 validation_data=(X_dev, y_dev))
-
-    # feature_extractors = [W2VExtractor(use_globve=True)]
-    # X, y = feature_fuse(feature_extractors, sentences, labels)
-    # clf = LinearSVC()
-    # OVO = True
-    # parameters = dict(C=np.logspace(-5, 1, 8))
-    # dump_file = os.path.join(MODEL_DIR, dataset + '_svm')
-    # model = Model(clf, feature_extractors, OVO=OVO)
-    # model.grid_search(X, y, parameters=parameters, n_jobs=-1)
-
-    # feature_extractors = [CNNExtractor(mincount=0)]
-    # X, y = feature_fuse(feature_extractors, sentences, labels)
-    # clf = OneD_CNN(vocabulary_size=cnn_extractor.vocabulary_size,
-    #           nb_filters=100,
-    #           embedding_dim=300,
-    #           drop_out_prob=0.5,
-    #           maxlen=X.shape[1],
-    #           nb_class=len(cnn_extractor.literal_labels))
-    # OVO = False
-    # parameters = dict(batch_size=[50], nb_epoch=[20], show_accuracy=[True])
-    # dump_file = os.path.join(MODEL_DIR, dataset + '_cnn')
-    # model = Model(clf, feature_extractors, OVO=OVO)
-    # model.grid_search(X, y, parameters=parameters, n_jobs=1)
-
-    # model.dump_to_file(dump_file)
-    # for fe in feature_extractors:
-    #     del fe
-    # del feature_extractors

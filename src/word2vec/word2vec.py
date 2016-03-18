@@ -1,3 +1,4 @@
+import os
 from gensim.models import Word2Vec as W2V
 from singleton import Singleton
 

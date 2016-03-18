@@ -8,7 +8,7 @@ cd word2vec
 ```
 ## Build Classifiers
 - Write new classifier that is scikit-learn compatible in src/classifier.
-- Train the classifier with src/train_models.py and store it in model/
+- Train the classifier with src/*_train.py and store it in model/ (please refer to src/svm_train.py)
 
 ## Run Server
 - For releasing, execute src/server.py
