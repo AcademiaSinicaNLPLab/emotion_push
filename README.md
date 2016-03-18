@@ -2,7 +2,7 @@
 
 ## Setting up the environment
 ```bash
-git submodule update
+git submodule update --init corpus word2vec
 cd word2vec
 # Followd word2vec/README.md to setup word2vec
 ```
