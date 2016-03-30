@@ -9,6 +9,7 @@ from flask import request
 import json
 import os
 import logging
+import numpy as np
 logging.basicConfig(level=logging.INFO)
 
 from flask.ext.cors import cross_origin
@@ -23,8 +24,7 @@ def request2json(data):
 
 
 @app.route('/listmodel', methods=['GET'])
-def list_model():
-    print controler.list_model()
+def list_model(): # print controler.list_model()
     return json.dumps(controler.list_model())
 
 @app.route('/predict', methods=['GET'])
@@ -32,15 +32,26 @@ def list_model():
 def predict():
     model = request.args['model']
     text = request.args['text']
-    print text
     res = controler.predict(model, text)
+    # print '='*20
+    print
+    print 'predict'
+    print text
+    print emotions[np.argsort(np.array(res['res']))[::-1]]
     return json.dumps(res)
 
 @app.route('/log', methods=['GET'])
 @cross_origin()
 def log():
-    data = json.loads(request.args['data'])
-    return json.dumps(logger.log(data))
+    try:
+        data = json.loads(request.args['data'])
+        logger.log(data)
+        return "Success"
+    except Exception as e:
+        # print '='*20
+        # print 'log failure'
+        # print request.args
+        return "Failure"
 
 # @app.route('/log', methods=['POST'])
 # @cross_origin()
@@ -79,9 +90,11 @@ def parse_arg(argv):
 
     return parser.parse_args(argv[1:])
 
+
 if __name__ == "__main__":
     args = parse_arg(sys.argv)
     controler = Controler(os.path.abspath('../model'))
+    emotions = np.array(controler.list_model()['LJ40K_svm'])
     logger = Logger()
 
     if args.debug:

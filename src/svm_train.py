@@ -37,7 +37,9 @@ if __name__ == "__main__":
         split = corpus.split.values
 
     feature_extractors = [W2VExtractor()]
+    logging.debug('loading feature...')
     X, y = feature_fuse(feature_extractors, sentences, labels)
+    logging.debug('feature loaded')
     clf = LinearSVC()
     dump_file = os.path.join(MODEL_DIR, dataset + '_svm')
     if split is None:
@@ -50,6 +52,3 @@ if __name__ == "__main__":
         raise NotImplementedError
 
     model.dump_to_file(dump_file)
-    for fe in feature_extractors:
-        del fe
-    del feature_extractors

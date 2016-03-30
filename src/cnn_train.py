@@ -12,7 +12,6 @@ from classifier.cnn import Kim_CNN, MyCNN, Multi_OneD_CNN, MyRegularCNN, RecordT
 from sklearn.cross_validation import StratifiedKFold, train_test_split
 from model import Model
 from word2vec.word2vec import Word2Vec
-import dataloader
 import pandas
 from feature.extractor import feature_fuse, W2VExtractor, CNNExtractor
 from keras.utils.np_utils import to_categorical
@@ -73,6 +72,7 @@ def parse_arg(argv):
     parser.add_argument('dataset', help='dataset name')
     parser.add_argument('-e', '--epoch', type=int, default=20, help='number of epoch')
     parser.add_argument('-s', '--seed', type=int, default=0, help='random seed')
+    parser.add_argument('-l', '--leave', action='store_true', help='leave cross validation at the firt iteration')
     return parser.parse_args(argv[1:])
 
 if __name__ == "__main__":
@@ -103,11 +103,7 @@ if __name__ == "__main__":
     embedding_dim = W.shape[1] if W is not None else 300
 
     layer=1
-    # clf = MyCNN(
-    # clf = Multi_OneD_CNN(
     clf = Kim_CNN(
-    # clf = Good_Kim_CNN(
-    # clf = MyRegularCNN(
         vocabulary_size=cnn_extractor.vocabulary_size,
         nb_filter=100,
         layer=layer,
@@ -118,6 +114,9 @@ if __name__ == "__main__":
         use_my_embedding=True,
         nb_class=len(cnn_extractor.literal_labels),
         embedding_weights=W)
+
+    model = Model(clf, cnn_extractor)
+    dump_file = os.path.join(MODEL_DIR, dataset + '_cnn')
 
     if split is None:
         test_acc = []
@@ -136,6 +135,8 @@ if __name__ == "__main__":
                     callbacks=[callback])
             test_acc.append(callback.test_acc)
             print "test_acc: {}".format(callback.test_acc)
+            if args.leave:
+                break
 
         print test_acc, np.average(test_acc)
     else:
@@ -149,3 +150,7 @@ if __name__ == "__main__":
                 nb_epoch=args.epoch,
                 show_accuracy=True,
                 validation_data=(X_dev, y_dev))
+
+    print clf.predict_proba(X[:2])
+
+    model.dump_to_file(dump_file)

@@ -40,6 +40,8 @@ class Model(object):
         return model
 
     def dump_to_file(self, fname):
+        if not isinstance(self.clf, list):
+            self.clf = [self.clf]
         for c in self.clf:
             try:
                 c.pre_dump(fname)
@@ -53,7 +55,7 @@ class Model(object):
         with open(fname, 'w') as f:
             pickle.dump(self, f)
 
-    def grid_search(self, X, y, n_folds=10, scoring='accuracy', parameters=None, **kwargs):
+    def grid_search(self, X, y, n_folds=10, scoring='accuracy', parameters=None, balance=True, **kwargs):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -61,12 +63,23 @@ class Model(object):
             if self.OVO:
                 y = MultiLabelBinarizer().fit_transform([[i] for i in y])
                 for i in range(y.shape[1]):
-                    clfs.append(self._grid_search(X, y[:, i], n_folds, scoring, parameters, **kwargs))
+                    XX = X
+                    yy = y[:, i]
+                    if balance and abs(np.sum(yy)-len(yy)/2)>10:
+                        posInd, negInd = yy==1, yy==0
+                        XXpos, yypos = X[posInd], yy[posInd]
+                        XXneg, yyneg = X[negInd], yy[negInd]
+                        np.random.shuffle(XXneg)
+                        np.random.shuffle(yyneg)
+                        XX = np.concatenate((XXpos, XXneg[:len(XXpos)]))
+                        yy = np.concatenate((yypos, yyneg[:len(yypos)]))
+
+                    clfs.append(self._grid_search(XX, yy, n_folds, scoring, parameters, balance, **kwargs))
             else:
                 clfs.append(self._grid_search(X, y, n_folds, scoring, parameters, **kwargs))
             self.clf = clfs
 
-    def _grid_search(self, X, y, n_folds, scoring, parameters, **kwargs):
+    def _grid_search(self, X, y, n_folds, scoring, parameters, balance=True, **kwargs):
         cv = StratifiedKFold(y, n_folds=n_folds, shuffle=True)
         clf = grid_search.GridSearchCV(self.clf, parameters, scoring=scoring, cv=cv, **kwargs)
         clf.fit(X, y)
@@ -80,9 +93,14 @@ class Model(object):
             return [0] * len(self.clf)
 
         fn_list = dir(self.clf[0])
-        if 'predict_pboba' in fn_list:
-            return [c.predict_proba(feature)[0] for c in self.clf]
+        if 'predict_proba' in fn_list:
+            res = [c.predict_proba(feature)[0] for c in self.clf]
         elif 'decision_function' in fn_list:
-            return [c.decision_function(feature)[0] for c in self.clf]
+            res = [c.decision_function(feature)[0] for c in self.clf]
         else:
-            return [c.predict(feature)[0] for c in self.clf]
+            res = [c.predict(feature)[0] for c in self.clf]
+
+        if len(res)==1:
+            return list(res[0])
+        else:
+            return list(res)

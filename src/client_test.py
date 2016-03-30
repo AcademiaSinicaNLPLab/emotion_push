@@ -34,8 +34,9 @@ preditc_text = [
 ]
 
 
-model = 'MR_svm'
-# model = 'LJ40k_svm'
+# model = 'MR_svm'
+# model = 'MR_cnn'
+model = 'LJ40K_svm'
 predict_d = [{'model':model, 'text': t} for t in preditc_text]
 
 def parse_arg(argv):

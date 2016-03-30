@@ -50,7 +50,7 @@ class Controler():
 
 class Logger(object):
 
-    def __init__(self, address="doraemon.iis.sinica.edu.tw", dbname="emotion_visualiztion", collection_name='log'):
+    def __init__(self, address="doraemon.iis.sinica.edu.tw", dbname="emotion_push", collection_name='log'):
 
         client = MongoClient(address)
         db = client[dbname]
