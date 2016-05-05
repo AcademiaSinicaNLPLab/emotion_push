@@ -8,7 +8,7 @@ import cPickle
 import numpy as np
 from model import Model
 np.random.seed(0)
-from classifier.cnn import Kim_CNN, AdaCNN, RecordTest
+from classifier.cnn import Kim_CNN
 from sklearn.cross_validation import StratifiedKFold, train_test_split
 from word2vec.word2vec import Word2Vec
 import pandas
@@ -47,6 +47,17 @@ def parse_arg(argv):
     parser.add_argument('-s', '--seed', type=int, default=0, help='random seed')
     parser.add_argument('-d', '--debug', action='store_true', help='fast debug mode')
     return parser.parse_args(argv[1:])
+from keras.callbacks import Callback
+class RecordError(Callback):
+    def __init__(self, X, y, epoch):
+        super(RecordError, self).__init__()
+        self.X, self.y= X, y
+        self.errorCount = np.zeros((epoch, X.shape[0]), dtype=int)
+
+    def on_epoch_end(self, epoch, logs={}):
+        pred = self.model.predict(self.X, verbose=0)
+        self.errorCount[self.epoch] = np.not_equal(np.argmax(pred, axis=-1), np.argmax(self.y, axis=-1)).astype(int)
+        self.epoch+=1
 
 if __name__ == "__main__":
     args = parse_arg(sys.argv)
@@ -76,12 +87,7 @@ if __name__ == "__main__":
 
     logging.debug('embedding loaded..')
 
-    m=1
-
-    if m==1:
-        CLF = Kim_CNN
-    elif m==2:
-        CLF = AdaCNN
+    CLF = Kim_CNN
 
     clf = CLF(vocabulary_size=cnn_extractor.vocabulary_size,
               maxlen=X.shape[1],
@@ -89,36 +95,11 @@ if __name__ == "__main__":
               nb_class=len(cnn_extractor.literal_labels),
               embedding_weights=W)
 
-    model = Model(clf, cnn_extractor)
-    dump_file = os.path.join(MODEL_DIR, dataset + '_cnn')
-
+    callback = RecordError(X, y, args.epoch)
     if split is None:
         test_acc = []
-        cv = StratifiedKFold(y, n_folds=10, shuffle=True)
         y = to_categorical(y)
-        for train_ind, test_ind in cv:
-            X_train, X_test = X[train_ind], X[test_ind]
-            y_train, y_test = y[train_ind], y[test_ind]
-            X_train, X_dev, y_train, y_dev = train_test_split(X_train, y_train, test_size=0.1)
-            callback = RecordTest(X_test, y_test)
-            clf.fit(X_train, y_train,
-                    batch_size=50,
-                    nb_epoch=args.epoch,
-                    validation_data=(X_dev, y_dev),
-                    callbacks=[callback])
-            test_acc.append(callback.test_acc)
-            print "test_acc: {}".format(callback.test_acc)
-
-        print test_acc, np.average(test_acc)
-    else:
-        y = to_categorical(y)
-        train_ind, dev_ind, test_ind = (split=='train', split=='dev', split=='test')
-        X_train, X_dev, X_test = X[train_ind], X[dev_ind], X[test_ind]
-        y_train, y_dev, y_test = y[train_ind], y[dev_ind], y[test_ind]
-        callback = RecordTest(X_test, y_test)
-        clf.fit(X_train, y_train,
+        clf.fit(X, y,
                 batch_size=50,
                 nb_epoch=args.epoch,
-                validation_data=(X_dev, y_dev))
-
-    model.dump_to_file(dump_file)
+                callbacks=[callback])
