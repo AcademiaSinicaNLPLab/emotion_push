@@ -7,7 +7,7 @@ import os
 import cPickle
 import numpy as np
 from model import Model
-np.random.seed(0)
+np.random.seed(10)
 from classifier.cnn import Kim_CNN, AdaCNN, RecordTest
 from sklearn.cross_validation import StratifiedKFold, train_test_split
 from word2vec.word2vec import Word2Vec
@@ -82,6 +82,8 @@ if __name__ == "__main__":
         CLF = Kim_CNN
     elif m==2:
         CLF = AdaCNN
+    elif m==3:
+        CLF = RNN
 
     clf = CLF(vocabulary_size=cnn_extractor.vocabulary_size,
               maxlen=X.shape[1],

@@ -20,6 +20,7 @@ from keras.regularizers import l2
 from keras import constraints
 from keras.constraints import MaxNorm
 from keras.callbacks import Callback
+from keras.layers.recurrent import GRU, LSTM
 
 import theano
 import theano.tensor as T
@@ -133,15 +134,33 @@ class CNNS(KerasClassifier):
                 if l>ori_len:
                     return (l-ori_len)/2
 
+class RNN(CNNS):
+    def __call__(self,
+                 vocabulary_size=5000,
+                 maxlen=100,
+                 embedding_dim=300,
+                 hidden_dim=100,
+                 nb_class=2,
+                 drop_out_prob=0.,
+                 embedding_weights=None):
+
+        self.log_params(locals())
+        model = Sequential()
+        model.add(Embedding(vocabulary_size, embedding_dim, mask_zero=True, input_length=maxlen, weights=[embedding_weights]))
+        model.add(LSTM(hidden_dim))
+        self.add_full(model, drop_out_prob, nb_class)
+        model.summary()
+        return model
+
 class Kim_CNN(CNNS):
     def __call__(self,
                  vocabulary_size=5000,
                  maxlen=100,
                  embedding_dim=300,
                  nb_filter=100,
-                 filter_length=[3],
+                 filter_length=[3,4,5],
                  nb_class=2,
-                 drop_out_prob=0.5,
+                 drop_out_prob=0.,
                  use_my_embedding=True,
                  embedding_weights=None):
 
@@ -151,9 +170,6 @@ class Kim_CNN(CNNS):
         # maxlen = self.add_pad(model, maxlen)
 
         model.add(self.convLayer(maxlen, embedding_dim, nb_filter, filter_length))
-        # model.add(MaxPooling1D(maxlen))
-        # model.add(Flatten())
-
         self.add_full(model, drop_out_prob, nb_class)
         model.summary()
         return model
