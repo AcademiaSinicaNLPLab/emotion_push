@@ -13,6 +13,7 @@ from word2vec.word2vec import Word2Vec
 import pandas
 from feature.extractor import feature_fuse, W2VExtractor, CNNExtractor
 from keras.utils.np_utils import to_categorical
+from keras.callbacks import Callback
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -42,13 +43,12 @@ def load_embedding(vocabulary, cache_file_name):
 def parse_arg(argv):
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('dataset', help='dataset name')
-    parser.add_argument('-l', '--level', type=int, default=10, help='number of level')
     parser.add_argument('-s', '--seed', type=int, default=0, help='random seed')
+    parser.add_argument('-c', '--curriculum', action='store_true', help='curriculum learning')
+    parser.add_argument('-l', '--level', type=int, default=10, help='number of level')
+    parser.add_argument('-e', '--experimental', action='store_true', help='experimental')
     parser.add_argument('-d', '--debug', action='store_true', help='fast debug mode')
-    parser.add_argument('-nc', '--no_curriculum', action='store_true', help='no curriculum learning')
     return parser.parse_args(argv[1:])
-from keras.callbacks import Callback
-
 
 class IndexByLevel(object):
     def __init__(self, X, sentence):
@@ -147,17 +147,91 @@ class RecordSentenceError(Callback):
         super(RecordSentenceError, self).__init__()
         self.X = X
         self.y = y
-        self.sentence = sentence 
+        # self.sentence = sentence 
+        self.sentence = [s.split() for s in sentence] 
         self.log = open(log, 'w')
 
     def on_epoch_end(self, epoch, logs={}):
         pred = self.model.predict(self.X, verbose=0)
         ind = np.not_equal(np.argmax(pred, axis=-1), np.argmax(self.y, axis=-1))
+        out =""
         # for i, s in zip(self.y[ind],self.sentence[ind]):
-        #     self.log.write('{}|{}\n'.format(i,s))
-        aa = [i for i in range(len(ind)) if ind[i]]
-        self.log.write('{}\n'.format(aa))
-        self.log.write('='*20+'\n')
+        #     out+='{}|{}\n'.format(i,s)
+
+        inds = []
+        for i, tf in enumerate(ind):
+            if tf and 'but' in self.sentence[i]:
+                inds.append(i)
+        self.log.write('{}\n'.format(inds))
+        # aa = [i for i in range(len(ind)) if ind[i]]
+        # self.log.write('{}\n'.format(aa))
+        out+=('='*20+'\n')
+        self.log.write(out)
+
+def get_before_but(X, y, but):
+    inds = get_only_but_ind(X, but)
+    resX = X[inds]
+    resy = y[inds]
+    for (i, x) in enumerate(np.copy(resX)):
+        ind = np.where(x==but)[0][0]
+        beforebut = x[:ind] 
+        afterbut = x[ind:]
+        afterbut[0]=0
+        resX[i] = np.concatenate((beforebut, np.zeros_like(afterbut)))
+    return resX, 1-resy
+
+def get_after_but(X, y, but):
+    inds = get_only_but_ind(X, but)
+    resX = X[inds]
+    resy = y[inds]
+    for (i, x) in enumerate(np.copy(resX)):
+        ind = np.where(x==but)[0][0]
+        beforebut = x[:ind] 
+        afterbut = x[ind:]
+        afterbut[0]=0
+        resX[i] = np.concatenate((afterbut, np.zeros_like(beforebut)))
+    return resX, resy
+
+def get_only_but(X, y, but):
+    inds = get_only_but_ind(X, but)
+    return X[inds], y[inds]
+
+def get_no_but(X, y, but):
+    inds = get_no_but_ind(X, but)
+    return X[inds], y[inds]
+
+def get_only_but_ind(X, but):
+    res = []
+    for i, x in enumerate(X):
+        ind = np.where(x==but)[0]
+        if len(ind)==1:
+            res.append(i)
+    return res
+
+def get_no_but_ind(X, but):
+    res = []
+    for i, (x, yy) in enumerate(zip(X, y)):
+        ind = np.where(x==but)[0]
+        if len(ind)!=1:
+            res.append(i)
+    return res
+
+def depreciate_main():
+    if args.curriculum:
+        resample_on_val = Resample(X_train, y_train, sentence_train, IndexByLength, max_level=args.level)
+        while not resample_on_val.all_data_used():
+            Xs, ys = resample_on_val.X_sample, resample_on_val.y_sample,
+            clf.fit(Xs, ys,
+                    batch_size=50, nb_epoch=1, verbose=2,
+                    validation_data=(X_dev, y_dev),
+                    callbacks=[resample_on_val, recordTest])
+    if args.extra:
+        Xs, ys = generate_extra_data(X_train, y_train, cnn_extractor.vocabulary['but'])
+        sample_weight = [0.5]*len(Xs)+[1]*len(X_train)
+        X_train = np.concatenate((Xs, X_train))
+        y_train = np.concatenate((ys, y_train))
+    else:
+        sample_weight = None
 
 if __name__ == "__main__":
     args = parse_arg(sys.argv)
@@ -187,23 +261,53 @@ if __name__ == "__main__":
 
     logging.debug('embedding loaded..')
 
-    CLF = Kim_CNN
-    # CLF = RNN
+    # CLF = Kim_CNN
+    CLF = RNN
 
     cv = StratifiedKFold(y, n_folds=10, shuffle=True)
     y = to_categorical(y)
 
     test_acc = []
+
     for train_ind, test_ind in cv:
         X_train, X_test = X[train_ind], X[test_ind]
         y_train, y_test = y[train_ind], y[test_ind]
-        sentence_train = sentence[train_ind]
 
         cv2 = StratifiedKFold(np.argmax(y_train, axis=1), n_folds=10, shuffle=True)
         train_ind, dev_ind = list(cv2)[0]
         X_train, X_dev = X_train[train_ind], X_train[dev_ind]
         y_train, y_dev = y_train[train_ind], y_train[dev_ind] 
-        sentence_train = sentence_train[train_ind]
+
+        if args.experimental:
+            print "test (abut, obut)"
+            but = cnn_extractor.vocabulary['but']
+            obut_ind = get_only_but_ind(X_test, but)
+            nobut_ind = get_no_but_ind(X_test, but)
+            inds = np.concatenate((obut_ind, nobut_ind))
+            sentence_test = sentence[test_ind[inds]]
+
+            abut = get_after_but(X_test, y_test, but)
+            nobut = get_no_but(X_test, y_test, but)
+            X_test = np.concatenate((abut[0], nobut[0]))
+            y_test = np.concatenate((abut[1], nobut[1]))
+        if args.experimental:
+            print "train (bbut, abut, nobut)"
+            but = cnn_extractor.vocabulary['but']
+            bbut = get_before_but(X_train, y_train, but)
+            abut = get_after_but(X_train, y_train, but)
+            nobut = get_no_but(X_train, y_train, but)
+            X_test = np.concatenate((abut[0], nobut[0]))
+            y_test = np.concatenate((abut[1], nobut[1]))
+
+        # else:
+        #     but = cnn_extractor.vocabulary['but']
+        #     obut_ind = get_only_but_ind(X_test, but)
+        #     nobut_ind = get_no_but_ind(X_test, but)
+        #     inds = np.concatenate((obut_ind, nobut_ind))
+        #     sentence_test = sentence[test_ind[inds]]
+        #
+        #     X_test = X_test[inds]
+        #     y_test = y_test[inds]
 
         recordTest = RecordTest(X_test, y_test)
         earlyStop = EarlyStop(3)
@@ -214,20 +318,17 @@ if __name__ == "__main__":
                     nb_class=len(cnn_extractor.literal_labels),
                     embedding_weights=W)
 
-        if not args.no_curriculum:
-            resample_on_val = Resample(X_train, y_train, sentence_train, IndexByLength, max_level=args.level)
-            while not resample_on_val.all_data_used():
-                Xs, ys = resample_on_val.X_sample, resample_on_val.y_sample,
-                clf.fit(Xs, ys,
-                        batch_size=50, nb_epoch=1, verbose=2,
-                        validation_data=(X_dev, y_dev),
-                        callbacks=[resample_on_val, recordTest])
+        if args.experimental:
+            rse = RecordSentenceError(X_test, y_test, sentence_test, log=os.path.join(MODULE_DIR, '..', 'result', 'senerror-e'))
+        else:
+            rse = RecordSentenceError(X_test, y_test, sentence_test)
         clf.fit(X_train, y_train,
-                batch_size=50, nb_epoch=100, verbose=2,
+                batch_size=50, nb_epoch=20, verbose=1,
                 validation_data=(X_dev, y_dev),
-                callbacks=[RecordSentenceError(X_test, y_test, sentence[test_ind]), recordTest, earlyStop])
+                # callbacks=[rse, recordTest, EarlyStop(1)])
+                callbacks=[recordTest, EarlyStop(10)])
+        break
 
         test_acc.append(recordTest.test_acc)
-        break
 
     print test_acc, np.average(test_acc)

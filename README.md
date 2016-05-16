@@ -1,5 +1,12 @@
 # Process
 
+## 
+word2vec: word vector modules, import this modules to load pre-trained word vectors
+corpus: raw corpus data and preprocessing script
+cache: cached data, e.g. word vector for word of certain corpus (loading word vectors for all words every time is not a good idea)
+model: trained model files. Running emotion push server requires at least one trained model
+src: source code
+
 ## Setting up the environment
 ```bash
 git submodule update --init corpus word2vec

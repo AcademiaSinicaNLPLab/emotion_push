@@ -141,13 +141,16 @@ class RNN(CNNS):
                  embedding_dim=300,
                  hidden_dim=100,
                  nb_class=2,
-                 drop_out_prob=0.,
+                 drop_out_prob=0.3,
                  embedding_weights=None):
 
         self.log_params(locals())
         model = Sequential()
-        model.add(Embedding(vocabulary_size, embedding_dim, mask_zero=True, input_length=maxlen, weights=[embedding_weights]))
-        model.add(LSTM(hidden_dim))
+        if embedding_weights is None:
+            model.add(Embedding(vocabulary_size, embedding_dim, mask_zero=True, input_length=maxlen))
+        else:
+            model.add(Embedding(vocabulary_size, embedding_dim, mask_zero=True, input_length=maxlen, weights=[embedding_weights]))
+        model.add(GRU(hidden_dim))
         self.add_full(model, drop_out_prob, nb_class)
         model.summary()
         return model

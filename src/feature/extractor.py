@@ -94,8 +94,8 @@ class CNNExtractor(FeatureExtractor):
 
     def pre_calculate(self, sentences):
         maxlen = max(len(x) for x in sentences)
-        # if maxlen % 2 == 1:
-        #     maxlen+=1
+        if maxlen % 2 == 1:
+            maxlen+=1
 
         self.maxlen = maxlen
         pad_sentences = [self.to_given_length(s, self.maxlen) for s in sentences]
