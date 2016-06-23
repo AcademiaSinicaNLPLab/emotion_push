@@ -64,7 +64,7 @@ class RegexpReplacer(object):
         for (regex, repl) in patterns:
             self.patterns = [(re.compile(regex), repl) for (regex, repl) in patterns]
 
-    def replace(self, text):
+    def replace(self, sentence):
         s = text
         for (pattern, repl) in self.patterns:
             s = re.sub(pattern, repl, s)
@@ -73,7 +73,12 @@ class RegexpReplacer(object):
 regReplacer = RegexpReplacer()
 
 
-def preprocess(text):
-    text = regReplacer.replace(text)
-    text = text.strip().lower()
-    return text.split(' ')
+def preprocess(sentence):
+    '''Replace some pattern in the sentences
+    @param sentence: a single sentence
+    @return: a list of words
+    '''
+
+    sentence = regReplacer.replace(sentence)
+    sentence = sentence.strip().lower()
+    return sentence.split(' ')

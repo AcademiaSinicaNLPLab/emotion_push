@@ -12,81 +12,42 @@ import logging
 import numpy as np
 logging.basicConfig(level=logging.INFO)
 
-from flask.ext.cors import cross_origin
+from flask_cors import CORS
 from controler import Controler, Logger
 
 app = Flask(__name__)
-# app.config['CORS_HEADERS'] = 'Content-Type'
-
+CORS(app)
 
 def request2json(data):
     return json.loads(data.decode('utf8'))
 
 
 @app.route('/listmodel', methods=['GET'])
-def list_model(): # print controler.list_model()
+def list_model():
     return json.dumps(controler.list_model())
 
-@app.route('/predict', methods=['GET'])
-@cross_origin()
+@app.route('/predict', methods=['POST'])
 def predict():
-    model = request.args['model']
-    text = request.args['text']
-    res = controler.predict(model, text)
-    # print '='*20
-    print
-    print 'predict'
-    print text
+    data = request2json(request.data)
+    res = controler.predict(data['model'], data['text'])
+    print data['text']
     print emotions[np.argsort(np.array(res['res']))[::-1]]
     return json.dumps(res)
 
-@app.route('/log', methods=['GET'])
-@cross_origin()
+@app.route('/log', methods=['POST'])
 def log():
     try:
-        data = json.loads(request.args['data'])
-        logger.log(data)
-        return "Success"
+        data = request2json(request.data)
+        return json.dumps(logger.log(data))
     except Exception as e:
-        # print '='*20
-        # print 'log failure'
-        # print request.args
+        print "log failure"
         return "Failure"
-
-# @app.route('/log', methods=['POST'])
-# @cross_origin()
-# def log():
-#     data = request2json(request.data)
-#     return json.dumps(logger.log(data))
-
-# @app.route('/predict', methods=['POST'])
-# @cross_origin()
-# def predict():
-#     print '='*40
-#     print request
-#     print '='*40
-#     print request.data
-#     print '='*40
-#     data = request2json(request.data)
-#     print data
-#     res = controler.predict(data['model'], data['text'])
-#     return json.dumps(res)
-
-
-# @app.route('/log', methods=['POST'])
-# @cross_origin()
-# def log():
-#     data = request2json(request.data)
-#     return json.dumps(logger.log(data))
-
 
 def parse_arg(argv):
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('-a', '--address', default='0.0.0.0',
-                        help='accesible address')
+    parser.add_argument('-a', '--address', default='0.0.0.0', help='accesible address')
     parser.add_argument('-p', '--port', default=5125, type=int, help='port')
-    parser.add_argument(
-        '-d', '--debug', action='store_true', help='debug mode')
+    parser.add_argument('-d', '--debug', action='store_true', help='debug mode')
 
     return parser.parse_args(argv[1:])
 
@@ -103,5 +64,4 @@ if __name__ == "__main__":
                 threaded=True, use_reloader=False)
     else:
         print "* Running on http://{}:{}/".format(args.address, args.port)
-        WSGIServer(app, multithreaded=True, bindAddress=(
-            args.address, args.port)).run()
+        WSGIServer(app, multithreaded=True, bindAddress=(args.address, args.port)).run()

@@ -46,7 +46,7 @@ if __name__ == "__main__":
         OVO = True
         parameters = dict(C=np.logspace(-5, 1, 8))
         model = Model(clf, feature_extractors, OVO=OVO)
-        model.grid_search(X, y, parameters=parameters, n_jobs=-1)
+        model.grid_search(X, y, parameters=parameters, balance=True, n_jobs=-1)
     else:
         assert False, "No split not implemented yet"
         raise NotImplementedError

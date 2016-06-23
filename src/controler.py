@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+'''
+This module handles the server's API logic.
+'''
 
 import sys
 import os
@@ -10,6 +13,12 @@ from textblob import TextBlob
 
 
 def install_all_model(models, dirname, fnames):
+    '''Load all trained model from filename. Store the result in models. This is a call back for os.path.walk.
+    @param models: the resulting model list
+    @param dirname: current visiting directory
+    @param fnames: all file name int current visiting directory
+    @see controler.__init__
+    '''
     if dirname == '.':
         return
     for fname in fnames:
@@ -24,23 +33,35 @@ def install_all_model(models, dirname, fnames):
 
 
 class Controler():
+    '''Implement Server's APIs' logic.
+    '''
 
     def __init__(self, model_dir):
+        '''
+        @param model_dir: The directory containing all trained model files
+        '''
         self.models = {}
         os.path.walk(model_dir, install_all_model, self.models)
         print "All models loaded"
 
     def list_model(self):
+        '''Logic for Server's list_model API
+        '''
         print self.models
         return {name: model.labels for name, model in self.models.items()}
 
-    def predict(self, model_name, text):
+    def predict(self, model_name, sentence):
+        '''Logic for Server's preict API
+        @param model_name: the model to be used to predict the emotion
+        @param sentence: the target sentence 
+        @return: a list of scores, corresponding to the emotion of the selected model
+        '''
         try:
-            text = str(TextBlob(text).translate(to='en'))
+            sentence = str(TextBlob(sentence).translate(to='en'))
         except Exception as e:
             pass
 
-        pred = self.models[model_name].predict(text)
+        pred = self.models[model_name].predict(sentence)
         if sum(pred) == 0:
             return {'res': pred}
         else:
@@ -49,6 +70,8 @@ class Controler():
 
 
 class Logger(object):
+    '''Implement Server's log API
+    '''
 
     def __init__(self, address="doraemon.iis.sinica.edu.tw", dbname="emotion_push", collection_name='log'):
 

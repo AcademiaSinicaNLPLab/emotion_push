@@ -42,7 +42,7 @@ predict_d = [{'model':model, 'text': t} for t in preditc_text]
 def parse_arg(argv):
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-d', '--debug', action='store_true', help='debugging url')
-    parser.add_argument('-p', '--post', action='store_true', help='use post')
+    parser.add_argument('-g', '--get', action='store_true', help='use get')
     return parser.parse_args(argv[1:])
 
 
@@ -58,11 +58,11 @@ if __name__ == "__main__":
     emotions = np.array(json.loads(requests.get(url+'listmodel').text)[model])
     for p_d in predict_d:
         print p_d['text']
-        if args.post:
-            res = requests.post(url+'predict', data=json.dumps(p_d)).text
-        else:
+        if args.get:
             get_url = url+'predict'+'?model={}&text="{}"'.format(p_d['model'], p_d['text'])
             res = requests.get(get_url).text
+        else:
+            res = requests.post(url+'predict', data=json.dumps(p_d)).text
 
         pred = json.loads(res)['res']
         print emotions[np.argsort(np.array(pred))[::-1]], res
