@@ -5,8 +5,10 @@
 ```bash
 git submodule update --init corpus word2vec
 cd word2vec
-# Followd word2vec/README.md to setup word2vec
-
+# If you are lwku lab member:
+ln -s /corpus/wordvector/word2vec/google_word2vec_pretrained google_word2vec_pretrained
+ln -s /corpus/wordvector/word2vec/google_word2vec_pretrained.syn0.npy google_word2vec_pretrained.syn0.npy
+# Else, follow word2vec/README.md to setup word2vec
 ```
 
 ## Source Tree Architecture
