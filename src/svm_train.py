@@ -43,9 +43,9 @@ if __name__ == "__main__":
     clf = LinearSVC()
     dump_file = os.path.join(MODEL_DIR, dataset + '_svm')
     if split is None:
-        OVO = True
+        OVA = True
         parameters = dict(C=np.logspace(-5, 1, 8))
-        model = Model(clf, feature_extractors, OVO=OVO)
+        model = Model(clf, feature_extractors, OVA=OVA)
         model.grid_search(X, y, parameters=parameters, balance=True, n_jobs=-1)
     else:
         assert False, "No split not implemented yet"

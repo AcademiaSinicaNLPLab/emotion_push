@@ -18,16 +18,16 @@ class Model(object):
     A model is a wrapper of any scikit-learn compatible classifier.
     The classifier to be wrapped should implement 'fit' and 'predict' (or 'predict_proba', 'decision_function')  functions.
     '''
-    def __init__(self, clf, feature_extractors, OVO=False):
+    def __init__(self, clf, feature_extractors, OVA=False):
         '''
         @params:
         clf: the classifier instance to be wrapped.
         feature_extractors: a (or a list of) feature extractor (should inherit from feature.extractors.FeatureExtractor)
-        OVO: for grid_search, one-versus-one
+        OVA: for grid_search, one-versus-all
         '''
         self.clf = clf
         self.feature_extractors = feature_extractors if type(feature_extractors) == list else [feature_extractors]
-        self.OVO = OVO
+        self.OVA = OVA
 
     @property
     def labels(self):
@@ -97,7 +97,7 @@ class Model(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             clfs = []
-            if self.OVO:
+            if self.OVA:
                 y = MultiLabelBinarizer().fit_transform([[i] for i in y])
                 for i in range(y.shape[1]):
                     XX = X
