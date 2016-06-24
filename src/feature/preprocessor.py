@@ -65,7 +65,7 @@ class RegexpReplacer(object):
             self.patterns = [(re.compile(regex), repl) for (regex, repl) in patterns]
 
     def replace(self, sentence):
-        s = text
+        s = sentence
         for (pattern, repl) in self.patterns:
             s = re.sub(pattern, repl, s)
         return s

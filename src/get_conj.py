@@ -15,17 +15,20 @@ def parse_arg(argv):
     parser.add_argument('dataset', help='dataset name')
     return parser.parse_args(argv[1:])
 
-# conjs = ['but', 'although', 'though']
-conjs = ["n't"]
+conj_fol = set(['but', 'however', 'nevertheless', 'otherwise', 'yet', 'still', 'nonetheless'])
+conj_infer = set(['therefore', 'furthermore', 'consequently', 'thus', 'subsequently', 'eventually', 'hence'])
+conj_prev = set(['till', 'until', 'despite', 'though', 'although'])
+mod = set(['if', 'might', 'could', 'can', 'would', 'may'])
+neg = set(['n\'t', 'not', 'neither', 'never', 'no', 'nor'])
 
-def get_only_but_ind(sentences):
+conjs = conj_fol.union(conj_infer).union(conj_prev).union(neg)
+
+def get_conj_ind(sentences):
     res = []
     for i, sentence in enumerate(sentences):
-        s = sentence.split()
-        for conj in conjs:
-            if conj in s:
-                res.append(i)
-                break
+        sent = set(sentence.split())
+        if len(sent.intersection(conjs))>0:
+            res.append(i)
     return res
 
 if __name__ == "__main__":
@@ -33,7 +36,6 @@ if __name__ == "__main__":
     args = parse_arg(sys.argv)
     dataset = args.dataset
     corpus = pandas.read_pickle(os.path.join(CORPUS_DIR, dataset+'.pkl'))
-    obut_ind = get_only_but_ind(corpus.sentence)
+    conj_ind = get_conj_ind(corpus.sentence)
 
-    # corpus.loc[obut_ind].to_csv(os.path.join(CORPUS_DIR, 'data', 'CONJ'+dataset+'.all'), index=False, doublequote=False, sep=' ', header=False, columns=['label','sentence'])
-    corpus.loc[obut_ind].to_csv(os.path.join(CORPUS_DIR, 'data', 'NEG'+dataset+'.all'), index=False, doublequote=False, sep=' ', header=False, columns=['label','sentence'])
+    corpus.loc[conj_ind].to_csv(os.path.join(CORPUS_DIR, 'data', 'CONJ'+dataset+'.all'), index=False, doublequote=False, sep=' ', header=False, columns=['label','sentence'])
