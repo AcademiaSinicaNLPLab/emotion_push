@@ -18,7 +18,7 @@ def feature_fuse(feature_extractors, sentences, labels=None):
     @param labels: literal labels of each sentence
 
 
-    @return X: 2D numpy array, feature extractors, one sentence per row 
+    @return X: 2D numpy array, feature vectors, one sentence per row 
     @return y: 1D numpy array, numbered label of each sentence
     '''
     Xs = []
@@ -49,7 +49,7 @@ class FeatureExtractor(object):
         @param sentences: list of sentences to be extracted
         @param labels: literal labels of each sentence
 
-        @return X: 2D numpy array, feature extractors, one sentence per row 
+        @return X: 2D numpy array, feature vectors, one sentence per row 
         @return y: 1D numpy array, numbered label of each sentence
         '''
         literal_labels = list(set(labels))
