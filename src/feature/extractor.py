@@ -66,7 +66,7 @@ class FeatureExtractor(object):
 
     def extract(self, sentence):
         '''Extract the feature vector for a testing sentence. The sentence is first turned into a list of words and then the feature extraction logic is delegated to _extract.'''
-        return self._extract(preprocess(text))
+        return self._extract(preprocess(sentence))
 
     def pre_calculate(self, sentences):
         '''Implement this function when a extractor needs to calculate some global infomation of the trainig data before extracting feature vector for each sentence.
