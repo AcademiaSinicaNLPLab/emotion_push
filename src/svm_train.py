@@ -21,6 +21,7 @@ def parse_arg(argv):
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('dataset', help='dataset name')
     parser.add_argument('-s', '--seed', type=int, default=0, help='random seed')
+    parser.add_argument('-dim', '--dimension', type=int, default=400, help='embedding dimension')
     return parser.parse_args(argv[1:])
 
 if __name__ == "__main__":
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     else:
         split = corpus.split.values
 
-    feature_extractors = [W2VExtractor()]
+    feature_extractors = [W2VExtractor(dim=args.dimension, path= '../word2vec/yahoo_blog')]
     logging.debug('loading feature...')
     X, y = feature_fuse(feature_extractors, sentences, labels)
     logging.debug('feature loaded')
