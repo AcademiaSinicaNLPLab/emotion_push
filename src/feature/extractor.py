@@ -81,12 +81,13 @@ class FeatureExtractor(object):
         raise NotImplementedError
 
 class W2VExtractor(FeatureExtractor):
-    def __init__(self, use_globve=False):
+    def __init__(self, dim=300, path=None, use_globve=False):
         self.use_globve = use_globve
+        self.dim = dim
         if self.use_globve:
             self.model = Globve()  # wordvector model
         else:
-            self.model = Word2Vec()  # wordvector model
+            self.model = Word2Vec(path=path)  # wordvector model
 
     def pre_dump(self):
         # It's silly to pickle the whole word embedding.
@@ -100,7 +101,7 @@ class W2VExtractor(FeatureExtractor):
             self.model = Word2Vec()  # wordvector model
 
     def _extract(self, wordarray):
-        X = np.zeros(300)
+        X = np.zeros(self.dim)
         i = 0
         for word in [w.decode('utf8') for w in wordarray]:
             if word in self.model:
