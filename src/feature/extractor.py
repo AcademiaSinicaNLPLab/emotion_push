@@ -35,9 +35,7 @@ def feature_fuse(feature_extractors, sentences, labels=None):
         return X, y
     else:
         for fe in feature_extractors:
-            print(sentences)
             Xs.append(fe.extract(sentences))
-            print(Xs[:10])
         if len(feature_extractors)==1:
             return Xs[0]
         else:
@@ -110,8 +108,6 @@ class W2VExtractor(FeatureExtractor):
             if word in self.model:
                 i += 1
                 X = X + self.model[word]
-                print(self.model[word][:10])
-        print(X[:10])
         if i > 0:
             X = X / i
         return X

@@ -31,31 +31,31 @@ replacement_patterns = [
     # (r"\?", " ? "),
     # (r"\s{2,}", " ")
 
-    (r"[^A-Za-z0-9(),!?\'\`]", " "),
-    (r"\'s", " \'s"),
-    (r"\'ve", " \'ve"),
-    (r"n\'t", " n\'t"),
-    (r"\'re", " \'re"),
-    (r"\'d", " \'d"),
-    (r"\'ll", " \'ll"),
-    (r",", " , "),
-    (r"!", " ! "),
-    (r"\(", " \( "),
-    (r"\)", " \) "),
-    (r"\?", " \? "),
-    (r"\s{2,}", " ")
+    # (r"[^A-Za-z0-9(),!?\'\`]", " "),
+    # (r"\'s", " \'s"),
+    # (r"\'ve", " \'ve"),
+    # (r"n\'t", " n\'t"),
+    # (r"\'re", " \'re"),
+    # (r"\'d", " \'d"),
+    # (r"\'ll", " \'ll"),
+    # (r",", " , "),
+    # (r"!", " ! "),
+    # (r"\(", " \( "),
+    # (r"\)", " \) "),
+    # (r"\?", " \? "),
+    # (r"\s{2,}", " ")
 ]
 
 
-SMILEBASE = ['\)', '-\)', '-\)', 'o\)', 'P', 'p']
-SMILEEMOICON = [': ' + s for s in SMILEBASE] + ['; ' + s for s in SMILEBASE]
-CRYBASE = ['D', 'o', '\(', '-\(', 'o\(', '-\[', "'\(", 'o\[', '\[']
-CRYEMOICON = [': ' + s for s in CRYBASE] + ['; ' + s for s in CRYBASE]
-
-for item in SMILEEMOICON:
-    replacement_patterns.append((item, 'SMILEEMOICON'))
-for item in CRYEMOICON:
-    replacement_patterns.append((item, 'CRYEMOICON'))
+# SMILEBASE = ['\)', '-\)', '-\)', 'o\)', 'P', 'p']
+# SMILEEMOICON = [': ' + s for s in SMILEBASE] + ['; ' + s for s in SMILEBASE]
+# CRYBASE = ['D', 'o', '\(', '-\(', 'o\(', '-\[', "'\(", 'o\[', '\[']
+# CRYEMOICON = [': ' + s for s in CRYBASE] + ['; ' + s for s in CRYBASE]
+#
+# for item in SMILEEMOICON:
+#     replacement_patterns.append((item, 'SMILEEMOICON'))
+# for item in CRYEMOICON:
+#     replacement_patterns.append((item, 'CRYEMOICON'))
 
 
 class RegexpReplacer(object):
@@ -78,7 +78,6 @@ def preprocess(sentence):
     @param sentence: a single sentence
     @return: a list of words
     '''
-
     sentence = regReplacer.replace(sentence)
     sentence = sentence.strip().lower()
     return sentence.split(' ')

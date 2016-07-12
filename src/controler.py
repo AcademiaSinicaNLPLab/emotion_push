@@ -7,6 +7,7 @@ This module handles the server's API logic.
 import sys
 import os
 import csv
+import re
 from model import Model
 from pymongo import MongoClient
 from textblob import TextBlob
@@ -61,14 +62,14 @@ class Controler():
         '''
         try:
             if model_name == 'YAHOO_svm':
-                tokenized_us = self.tokenizer.tokenizeStr(sentence.encode('utf8'))[0][0]
+                tokenized_us = self.tokenizer.tokenizeStr_without_timeout(sentence.encode('utf8'))[0][0]
                 cleanr = re.compile('\([A-Za-z].*?\)')
                 tokenized_us = re.sub(cleanr, '', tokenized_us.decode('utf8')).encode('utf8')
                 sentence = ' '.join(tokenized_us.split('　'))
             else:
                 sentence = str(TextBlob(sentence).translate(to='en'))
         except Exception as e:
-            print('Error: '+e)
+            print(e)
             pass
 
         pred = self.models[model_name].predict(sentence)
