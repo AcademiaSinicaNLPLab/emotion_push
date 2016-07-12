@@ -60,7 +60,7 @@ class Controler():
         @return: a list of scores, corresponding to the emotion of the selected model
         '''
         try:
-            if model_name == 'YAHOO':
+            if model_name == 'YAHOO_svm':
                 tokenized_us = self.tokenizer.tokenizeStr(sentence.encode('utf8'))[0][0]
                 cleanr = re.compile('\([A-Za-z].*?\)')
                 tokenized_us = re.sub(cleanr, '', tokenized_us.decode('utf8')).encode('utf8')
@@ -68,7 +68,7 @@ class Controler():
             else:
                 sentence = str(TextBlob(sentence).translate(to='en'))
         except Exception as e:
-            print(e)
+            print('Error: '+e)
             pass
 
         pred = self.models[model_name].predict(sentence)
