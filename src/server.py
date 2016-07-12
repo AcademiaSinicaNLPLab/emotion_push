@@ -15,12 +15,14 @@ logging.basicConfig(level=logging.INFO)
 from flask_cors import CORS
 from controler import Controler, Logger
 
+sys.path.append('/tools/CKIP/client')
+from Tokenizer import Tokenizer
+
 app = Flask(__name__)
 CORS(app)
 
 def request2json(data):
     return json.loads(data.decode('utf8'))
-
 
 @app.route('/listmodel', methods=['GET'])
 def list_model():
@@ -29,10 +31,11 @@ def list_model():
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request2json(request.data)
+
     res = controler.predict(data['model'], data['text'])
     print data['text']
     print emotions[np.argsort(np.array(res['res']))[::-1]]
-    return json.dumps(res)
+    return json.dumps(res)  
 
 @app.route('/log', methods=['POST'])
 def log():
@@ -55,12 +58,13 @@ def parse_arg(argv):
 if __name__ == "__main__":
     args = parse_arg(sys.argv)
     controler = Controler(os.path.abspath('../model'))
-    emotions = np.array(controler.list_model()['LJ40K_svm'])
+    # emotions = np.array(controler.list_model()['LJ40K_svm'])
+    emotions = np.array(controler.list_model()['YAHOO_svm'])
     logger = Logger()
 
     if args.debug:
         args.port += 1
-        app.run(args.address, args.port, debug='true',
+        app.run(args.address, args.port, debug=False,
                 threaded=True, use_reloader=False)
     else:
         print "* Running on http://{}:{}/".format(args.address, args.port)

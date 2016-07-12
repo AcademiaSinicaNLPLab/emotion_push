@@ -55,7 +55,7 @@ class Model(object):
         for fe in model.feature_extractors:
             try:
                 # Same as the above
-                fe.post_load()
+                fe.post_load(dim=400, path= '../word2vec/yahoo_blog')
             except AttributeError as e:
                 logging.debug("No post_load for {}".format(fe.__class__))
         return model

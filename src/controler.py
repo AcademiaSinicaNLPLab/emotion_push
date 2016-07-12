@@ -11,6 +11,8 @@ from model import Model
 from pymongo import MongoClient
 from textblob import TextBlob
 
+sys.path.append('/tools/CKIP/client')
+from Tokenizer import Tokenizer
 
 def install_all_model(models, dirname, fnames):
     '''Load all trained model from filename. Store the result in models. This is a call back for os.path.walk.
@@ -41,6 +43,7 @@ class Controler():
         @param model_dir: The directory containing all trained model files
         '''
         self.models = {}
+        self.tokenizer = Tokenizer()
         os.path.walk(model_dir, install_all_model, self.models)
         print "All models loaded"
 
@@ -53,12 +56,19 @@ class Controler():
     def predict(self, model_name, sentence):
         '''Logic for Server's preict API
         @param model_name: the model to be used to predict the emotion
-        @param sentence: the target sentence 
+        @param sentence: the target sentence
         @return: a list of scores, corresponding to the emotion of the selected model
         '''
         try:
-            sentence = str(TextBlob(sentence).translate(to='en'))
+            if model_name == 'YAHOO_svm':
+                tokenized_us = self.tokenizer.tokenizeStr(sentence.encode('utf8'))[0][0]
+                cleanr = re.compile('\([A-Za-z].*?\)')
+                tokenized_us = re.sub(cleanr, '', tokenized_us.decode('utf8')).encode('utf8')
+                sentence = ' '.join(tokenized_us.split('　'))
+            else:
+                sentence = str(TextBlob(sentence).translate(to='en'))
         except Exception as e:
+            print(e)
             pass
 
         pred = self.models[model_name].predict(sentence)
