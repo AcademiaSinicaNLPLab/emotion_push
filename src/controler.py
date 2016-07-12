@@ -10,7 +10,8 @@ import csv
 from model import Model
 from pymongo import MongoClient
 from textblob import TextBlob
-sys.path.append('/home/plum/kimo_emo')
+
+sys.path.append('/tools/CKIP/client')
 from Tokenizer import Tokenizer
 
 def install_all_model(models, dirname, fnames):
@@ -67,6 +68,7 @@ class Controler():
             else:
                 sentence = str(TextBlob(sentence).translate(to='en'))
         except Exception as e:
+            print(e)
             pass
 
         pred = self.models[model_name].predict(sentence)

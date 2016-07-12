@@ -11,14 +11,14 @@ import sys
 
 def feature_fuse(feature_extractors, sentences, labels=None):
     '''
-    Concate mutiple feature vectors extracted by a list of feature_extractors. 
+    Concate mutiple feature vectors extracted by a list of feature_extractors.
 
     @param feature_extractors: list of feature_extractors, each item shold be an (inherited) class of FeatureExtractor
     @param sentences: list of sentences to be extracted
     @param labels: literal labels of each sentence
 
 
-    @return X: 2D numpy array, feature vectors, one sentence per row 
+    @return X: 2D numpy array, feature vectors, one sentence per row
     @return y: 1D numpy array, numbered label of each sentence
     '''
     Xs = []
@@ -35,7 +35,9 @@ def feature_fuse(feature_extractors, sentences, labels=None):
         return X, y
     else:
         for fe in feature_extractors:
+            print(sentences)
             Xs.append(fe.extract(sentences))
+            print(Xs[:10])
         if len(feature_extractors)==1:
             return Xs[0]
         else:
@@ -49,7 +51,7 @@ class FeatureExtractor(object):
         @param sentences: list of sentences to be extracted
         @param labels: literal labels of each sentence
 
-        @return X: 2D numpy array, feature vectors, one sentence per row 
+        @return X: 2D numpy array, feature vectors, one sentence per row
         @return y: 1D numpy array, numbered label of each sentence
         '''
         literal_labels = list(set(labels))
@@ -93,12 +95,13 @@ class W2VExtractor(FeatureExtractor):
         # It's silly to pickle the whole word embedding.
         del self.model
 
-    def post_load(self):
+    def post_load(self, dim=300, path=None):
+        self.dim = dim
         # Load the word embedding bacause we didn't store it when dumping.
         if self.use_globve:
             self.model = Globve()  # wordvector model
         else:
-            self.model = Word2Vec()  # wordvector model
+            self.model = Word2Vec(path=path)  # wordvector model
 
     def _extract(self, wordarray):
         X = np.zeros(self.dim)
@@ -107,6 +110,8 @@ class W2VExtractor(FeatureExtractor):
             if word in self.model:
                 i += 1
                 X = X + self.model[word]
+                print(self.model[word][:10])
+        print(X[:10])
         if i > 0:
             X = X / i
         return X
@@ -295,7 +300,7 @@ class ConjWeightAllVecCNNExtractor(ConjWeightCNNExtractor):
                 # if word in self.All or word in self.no_emotion:
                 if word in self.All:
                     weight[beg+i] = 0
-                    
+
         res = weight*flip
         for i in range(len_words):
             if res[i]==-1:
